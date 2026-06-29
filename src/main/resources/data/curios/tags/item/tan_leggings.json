@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    { "id": "toughasnails:wool_leggings", "required": false },
+    { "id": "toughasnails:leaf_leggings", "required": false },
+    { "id": "toughasnails:hide_leggings", "required": false },
+    { "id": "toughasnails:cooling_leggings", "required": false }
+  ]
+}

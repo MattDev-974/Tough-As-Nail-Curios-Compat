@@ -1,0 +1,39 @@
+modLoader = "javafml"
+loaderVersion = "[4,)"
+license = "MIT"
+
+[[mods]]
+    modId = "${mod_id}"
+    version = "${mod_version}"
+    displayName = "${mod_name}"
+    description = '''
+Adds support for wearing Tough As Nails armor pieces in secondary Curios slots.
+'''
+
+[[dependencies.tancurios]]
+    modId = "neoforge"
+    type = "required"
+    versionRange = "[21.1,)"
+    ordering = "NONE"
+    side = "BOTH"
+
+[[dependencies.tancurios]]
+    modId = "minecraft"
+    type = "required"
+    versionRange = "[1.21.1,)"
+    ordering = "NONE"
+    side = "BOTH"
+
+[[dependencies.tancurios]]
+    modId = "curios"
+    type = "required"
+    versionRange = "[9.0,)"
+    ordering = "BEFORE"
+    side = "BOTH"
+
+[[dependencies.tancurios]]
+    modId = "toughasnails"
+    type = "required"
+    versionRange = "[10.0,)"
+    ordering = "BEFORE"
+    side = "BOTH"

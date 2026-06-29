@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    { "id": "toughasnails:wool_chestplate", "required": false },
+    { "id": "toughasnails:leaf_chestplate", "required": false },
+    { "id": "toughasnails:hide_chestplate", "required": false },
+    { "id": "toughasnails:cooling_chestplate", "required": false }
+  ]
+}

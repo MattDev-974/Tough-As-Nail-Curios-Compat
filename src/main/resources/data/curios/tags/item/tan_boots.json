@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    { "id": "toughasnails:wool_boots", "required": false },
+    { "id": "toughasnails:leaf_boots", "required": false },
+    { "id": "toughasnails:hide_boots", "required": false },
+    { "id": "toughasnails:cooling_boots", "required": false }
+  ]
+}

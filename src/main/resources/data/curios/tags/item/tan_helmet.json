@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    { "id": "toughasnails:wool_helmet", "required": false },
+    { "id": "toughasnails:leaf_helmet", "required": false },
+    { "id": "toughasnails:hide_helmet", "required": false },
+    { "id": "toughasnails:cooling_helmet", "required": false }
+  ]
+}
