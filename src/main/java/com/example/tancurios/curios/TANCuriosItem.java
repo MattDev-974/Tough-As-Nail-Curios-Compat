@@ -88,14 +88,43 @@ public class TANCuriosItem implements ICurio {
 
     @Override
     public boolean canEquip(SlotContext slotContext) {
-    if (!(stack.getItem() instanceof ArmorItem armorItem)) return false;
-    return switch (armorItem.getType()) {
-        case HELMET     -> slotContext.identifier().equals("tan_helmet");
-        case CHESTPLATE -> slotContext.identifier().equals("tan_chestplate");
-        case LEGGINGS   -> slotContext.identifier().equals("tan_leggings");
-        case BOOTS      -> slotContext.identifier().equals("tan_boots");
-        default         -> false;
+        if (!(stack.getItem() instanceof ArmorItem armorItem)) return false;
+
+        boolean correctSlot = switch (armorItem.getType()) {
+            case HELMET     -> slotContext.identifier().equals("tan_helmet");
+            case CHESTPLATE -> slotContext.identifier().equals("tan_chestplate");
+            case LEGGINGS   -> slotContext.identifier().equals("tan_leggings");
+            case BOOTS      -> slotContext.identifier().equals("tan_boots");
+            default         -> false;
         };
+        if (!correctSlot) return false;
+
+        // Empêche de cumuler l'effet thermique en portant la même pièce
+        // d'armure TAN à la fois dans le slot vanilla ET dans le slot Curios.
+        // Sans cette vérification, TAN applique son propre bonus de
+        // température pour l'armure vanilla équipée, et notre
+        // TANTemperatureModifier ajoute un second bonus pour la copie en
+        // Curios : la température grimpe/chute alors deux fois plus vite.
+        var livingEntity = slotContext.entity();
+        var equipmentSlot = switch (armorItem.getType()) {
+            case HELMET     -> net.minecraft.world.entity.EquipmentSlot.HEAD;
+            case CHESTPLATE -> net.minecraft.world.entity.EquipmentSlot.CHEST;
+            case LEGGINGS   -> net.minecraft.world.entity.EquipmentSlot.LEGS;
+            case BOOTS      -> net.minecraft.world.entity.EquipmentSlot.FEET;
+            default         -> null;
+        };
+        if (equipmentSlot != null) {
+            ItemStack vanillaStack = livingEntity.getItemBySlot(equipmentSlot);
+            if (!vanillaStack.isEmpty()
+                    && vanillaStack.getItem() instanceof ArmorItem vanillaArmor
+                    && vanillaArmor.getType() == armorItem.getType()
+                    && net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(vanillaStack.getItem()) != null
+                    && net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(vanillaStack.getItem()).getNamespace().equals("toughasnails")) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
