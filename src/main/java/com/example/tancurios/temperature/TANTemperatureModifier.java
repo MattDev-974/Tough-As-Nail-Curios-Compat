@@ -48,8 +48,6 @@ public class TANTemperatureModifier implements IPlayerTemperatureModifier {
 
         if (warmingPieces == 0 && coolingPieces == 0) return current;
 
-        // Sécurité : on ne compte jamais plus que le nombre de slots d'armure
-        // logiques (casque/plastron/jambières/bottes = 4).
         final int MAX_PIECES = 4;
         warmingPieces = Math.min(warmingPieces, MAX_PIECES);
         coolingPieces = Math.min(coolingPieces, MAX_PIECES);
@@ -57,43 +55,58 @@ public class TANTemperatureModifier implements IPlayerTemperatureModifier {
         TanCuriosMod.LOGGER.debug("[TAN-Curios] Modificateur température: +chaud={} +froid={} base={}",
                 warmingPieces, coolingPieces, current);
 
-        // On détecte le sens réel de l'échelle en comparant les noms des
-        // constantes ("ICY"/"COLD" vs "HOT"/"SCORCHING"), pour ne jamais se
-        // tromper de direction quel que soit l'ordre de déclaration côté TAN.
+        // TAN ne décale pas de niveaux directement : il modifie le délai de
+        // changement (ticks avant qu'un cran de TemperatureLevel change).
+        // Notre IPlayerTemperatureModifier ne peut retourner qu'un niveau
+        // cible, donc on simule un effet similaire en n'agissant QUE dans
+        // les zones hostiles, comme le ferait une armure équipée normalement :
+        //
+        //  - Laine (warming) : pousse vers NEUTRAL uniquement si le joueur
+        //    est en ICY ou COLD. En zone neutre ou chaude, aucun effet
+        //    (on ne surchauffe pas avec une veste en laine par 30°C).
+        //
+        //  - Feuille (cooling) : pousse vers NEUTRAL uniquement si le joueur
+        //    est en WARM ou HOT. En zone neutre ou froide, aucun effet.
+        //
+        // Le décalage reste limité à 1 niveau maximum (1-2 pièces) ou
+        // 2 niveaux (3-4 pièces) pour éviter de sauter trop vite.
+
         TemperatureLevel[] values = TemperatureLevel.values();
         int coldEnd = findColdEndIndex(values);
         int hotEnd = (coldEnd == 0) ? values.length - 1 : 0;
         int directionTowardHot = (hotEnd > coldEnd) ? 1 : -1;
-
-        // IMPORTANT : on ne décale plus d'un niveau ENTIER de TemperatureLevel
-        // par pièce d'armure. Un seul niveau de TemperatureLevel représente
-        // déjà une portion énorme de l'échelle totale (ex: 1/5e ou 1/7e), donc
-        // sauter un niveau complet par pièce rendait l'effet beaucoup trop
-        // fort (un seul casque en laine surchauffait, une seule pièce en
-        // feuille gelait). À la place, l'intensité augmente par PALIERS selon
-        // le nombre net de pièces, et est plafonnée à 2 niveaux maximum même
-        // avec 4 pièces du même type :
-        //   1-2 pièces nettes -> décalage de 1 niveau
-        //   3-4 pièces nettes -> décalage de 2 niveaux (effet plus marqué,
-        //                         mais jamais démesuré)
-        int netWarmth = warmingPieces - coolingPieces;
-        int magnitude = Math.abs(netWarmth);
-        int shift;
-        if (magnitude == 0) {
-            shift = 0;
-        } else if (magnitude <= 2) {
-            shift = 1;
-        } else {
-            shift = 2;
-        }
-        shift *= Integer.signum(netWarmth);
+        int neutral = values.length / 2; // index NEUTRAL (2 sur 5)
 
         int ordinal = current.ordinal();
-        ordinal += directionTowardHot * shift;
+        int netWarmth = warmingPieces - coolingPieces;
+        int magnitude = Math.abs(netWarmth);
+        int maxShift = (magnitude <= 2) ? 1 : 2;
 
-        // Clamp entre les valeurs valides de TemperatureLevel
+        if (netWarmth > 0) {
+            // Pièces chauffantes : n'agir que si on est dans la moitié froide
+            boolean inColdZone = (directionTowardHot > 0)
+                ? ordinal < neutral
+                : ordinal > neutral;
+            if (!inColdZone) return current;
+            ordinal += directionTowardHot * maxShift;
+            // Ne pas dépasser NEUTRAL
+            if (directionTowardHot > 0) ordinal = Math.min(ordinal, neutral);
+            else ordinal = Math.max(ordinal, neutral);
+        } else if (netWarmth < 0) {
+            // Pièces refroidissantes : n'agir que si on est dans la moitié chaude
+            boolean inHotZone = (directionTowardHot > 0)
+                ? ordinal > neutral
+                : ordinal < neutral;
+            if (!inHotZone) return current;
+            ordinal -= directionTowardHot * maxShift;
+            // Ne pas dépasser NEUTRAL dans l'autre sens
+            if (directionTowardHot > 0) ordinal = Math.max(ordinal, neutral);
+            else ordinal = Math.min(ordinal, neutral);
+        } else {
+            return current; // pièces chaudes et froides s'annulent
+        }
+
         ordinal = Math.max(0, Math.min(values.length - 1, ordinal));
-
         return values[ordinal];
     }
 

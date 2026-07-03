@@ -3,7 +3,7 @@ plugins {
     id 'net.neoforged.gradle.userdev' version '7.0.145'
 }
 
-version = '1.0.3'
+version = '1.0.4'
 group = 'com.example.tancurios'
 
 base {
